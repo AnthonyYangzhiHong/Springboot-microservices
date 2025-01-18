@@ -14,10 +14,12 @@ import java.util.Optional;
 
 @Service
 public class JobServiceImpl implements JobService {
-    JobRepository jobRepository;
+    private JobRepository jobRepository;
+    private RestTemplate restTemplate;
 
-    public JobServiceImpl(JobRepository jobRepository) {
+    public JobServiceImpl(JobRepository jobRepository, RestTemplate restTemplate) {
         this.jobRepository = jobRepository;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -25,14 +27,12 @@ public class JobServiceImpl implements JobService {
         List<Job> jobs = jobRepository.findAll();
         List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
         
-        RestTemplate restTemplate = new RestTemplate();
-
         for (Job job : jobs) {
             JobWithCompanyDTO jobWithCompanyDTO = new JobWithCompanyDTO();
             jobWithCompanyDTO.setJob(job);
 
             Company company = restTemplate.getForObject(
-                    "http://localhost:8081/companies/" + job.getCompanyId(),
+                    "http://company-service/companies/" + job.getCompanyId(),
                     Company.class);
             jobWithCompanyDTO.setCompany(company);
 
