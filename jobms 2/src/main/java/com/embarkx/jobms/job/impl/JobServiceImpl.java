@@ -5,12 +5,14 @@ import com.embarkx.jobms.job.JobRepository;
 import com.embarkx.jobms.job.JobService;
 import com.embarkx.jobms.job.dto.JobWithCompanyDTO;
 import com.embarkx.jobms.job.external.Company;
+import com.embarkx.jobms.job.mapper.JobMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -25,21 +27,16 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<JobWithCompanyDTO> findAll() {
         List<Job> jobs = jobRepository.findAll();
-        List<JobWithCompanyDTO> jobWithCompanyDTOs = new ArrayList<>();
-        
-        for (Job job : jobs) {
-            JobWithCompanyDTO jobWithCompanyDTO = new JobWithCompanyDTO();
-            jobWithCompanyDTO.setJob(job);
+        return jobs.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
 
-            Company company = restTemplate.getForObject(
-                    "http://company-service/companies/" + job.getCompanyId(),
-                    Company.class);
-            jobWithCompanyDTO.setCompany(company);
-
-            jobWithCompanyDTOs.add(jobWithCompanyDTO);
-        }
-
-        return jobWithCompanyDTOs;
+    private JobWithCompanyDTO convertToDto(Job job) {
+        Company company = restTemplate.getForObject(
+                "http://company-service/companies/" + job.getCompanyId(),
+                Company.class);
+        return JobMapper.mapToJobWithCompanyDto(job, company);
     }
 
     @Override
@@ -48,8 +45,12 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public Job getJobById(Long id) {
-        return jobRepository.findById(id).orElse(null);
+    public JobWithCompanyDTO getJobById(Long id) {
+        Job job = jobRepository.findById(id).orElse(null);
+        if (job != null) {
+            return convertToDto(job);
+        }
+        return null;
     }
 
     @Override
