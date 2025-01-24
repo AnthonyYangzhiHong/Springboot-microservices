@@ -4,6 +4,7 @@ import com.embarkx.jobms.job.dto.JobDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 
@@ -50,6 +51,11 @@ public class JobController {
         if (updated)
             return new ResponseEntity<>("Job updated successfully", HttpStatus.OK);
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/port")
+    public String getPort(@Value("${server.port}") String port) {
+        return "Job Service running on port: " + port;
     }
 }
 /*
