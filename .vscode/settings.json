@@ -1,0 +1,7 @@
+{
+    "java.project.sourcePaths": [
+        "jobms 4",
+        "service-reg"
+    ],
+    "java.compile.nullAnalysis.mode": "automatic"
+}

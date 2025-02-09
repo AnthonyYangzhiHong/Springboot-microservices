@@ -1,5 +1,6 @@
 package com.embarkx.reviewms.review.impl;
 
+import com.embarkx.reviewms.kafka.ReviewProducer;
 import com.embarkx.reviewms.review.Review;
 import com.embarkx.reviewms.review.ReviewRepository;
 import com.embarkx.reviewms.review.ReviewService;
@@ -10,9 +11,11 @@ import java.util.List;
 @Service
 public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
+    private final ReviewProducer reviewProducer;
 
-    public ReviewServiceImpl(ReviewRepository reviewRepository) {
+    public ReviewServiceImpl(ReviewRepository reviewRepository, ReviewProducer reviewProducer) {
         this.reviewRepository = reviewRepository;
+        this.reviewProducer = reviewProducer;
     }
 
     @Override
@@ -26,6 +29,8 @@ public class ReviewServiceImpl implements ReviewService {
         if (companyId != null && review != null){
             review.setCompanyId(companyId);
             reviewRepository.save(review);
+            // Send event to Kafka
+            reviewProducer.sendReviewMessage(companyId.toString(), review.getRating());
             return true;
         } else {
             return false;

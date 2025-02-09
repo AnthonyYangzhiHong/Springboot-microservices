@@ -10,10 +10,12 @@ import com.embarkx.jobms.job.external.Company;
 import com.embarkx.jobms.job.external.Review;
 import com.embarkx.jobms.job.mapper.JobMapper;
 import org.springframework.stereotype.Service;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 public class JobServiceImpl implements JobService {
@@ -30,11 +32,28 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @CircuitBreaker(name = "companyBreaker", fallbackMethod = "findAllFallback")
     public List<JobDTO> findAll() {
         List<Job> jobs = jobRepository.findAll();
         return jobs.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    // Fallback method
+    public List<JobDTO> findAllFallback(Exception e) {
+        List<Job> jobs = jobRepository.findAll();
+        return jobs.stream()
+                  .map(job -> {
+                      // Create fallback company
+                      Company fallbackCompany = new Company();
+                      fallbackCompany.setId(job.getCompanyId());
+                      fallbackCompany.setName("Company Service Unavailable");
+                      fallbackCompany.setDescription("Please try again later");
+                      
+                      return JobMapper.mapToJobWithCompanyDto(job, fallbackCompany, new ArrayList<>());
+                  })
+                  .collect(Collectors.toList());
     }
 
     private JobDTO convertToDto(Job job) {
